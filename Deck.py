@@ -12,6 +12,7 @@ class Deck:
         if (missing_count > 0):
             cards.extend([Card("Empty Card", {"tags": ["Empty", "Blank", "Non Engine"]})] * missing_count)
         self.__cards = cards
+        self.shuffle()
 
     def __draw_card(self) -> Card:
         """Draw a card from the deck"""
@@ -31,6 +32,9 @@ class Deck:
                 hand.append(card)
         
         return hand
+    
+    def shuffle(self) -> None:
+        random.shuffle(self.__cards)
 
     @property
     def deck_list(self) -> list[Card]:
