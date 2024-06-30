@@ -7,7 +7,7 @@
             "request": "launch",
             "program": "YugiohSim.py",
             "console": "integratedTerminal",
-            "args": "./example_inputs/SixSam.yaml"
+            "args": "${command:pickArgs}"
         }
     ]
 }
