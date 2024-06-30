@@ -1,3 +1,12 @@
+#!/usr/bin/python
+
+import yaml
+import argparse
+from itertools import product
+import random
+import sys
+import Deck
+
 #Yugioh probability estimator that takes Prosperity, Desires, Upstart, Extravagance, Duality into account
 #Can copy all this into https://www.online-python.com/online_python_compiler or another online compiler if you don't want to learn how to download python.
 
@@ -19,41 +28,42 @@
 deck_size = 40
 hand_size = 5
 input_cards_here="""
-Dog 3 Fluffal
-Owl 1 Fluffal
-Bear 3 Fluffal
-Goods 3 Dog Owl Bear Fluffal Edge
-Edge 4
-Fluffal 7
-Poly 2
-Patch 2 Edge Poly
-BrilliantFus 3
-Garnet 1
-HandTrap 8
+Grandmaster 1 SixSam Lvl5 EmptyCard
+Kizaru 3 SixSam Lvl4 SpecialSearch EmptyCard
+Kizan 3 SixSam Special Lvl4 EmptyCard
+Hatsume 1 SixSam BanishRecurse Lvl3 EmptyCard
+Yariza 1 SixSam Asc1000 Lvl3 EmptyCard
+Anarchist 2 SixSam Lvl3 Lvl3Tuner EmptyCard
+Kageki 3 SixSam NormalStarter Lvl3 EmptyCard
+Instructor 3 SixSam Tuner Lvl2Tuner Lvl2 EmptyCard
+Fuma 1 SixSam Tuner Lvl1Tuner Lvl1 EmptyCard
+ROTA 1 Search SixSam Lvl2Tuner Lvl3Tuner EmptyCard
+SmokeSignal 3 Search Lvl3Search Lvl2Tuner Lvl3Tuner SixSam EmptyCard
+Cunning 2 QuickPlay SamSpell EmptyCard
+Asceticism 1 QuickPlay SamSpell EmptyCard
+SixStrike 2 QuickPlay Strike EmptyCard
+Gateway 1 Counter EmptyCard
+Dojo 3 Counter EmptyCard
+Blank 9 EmptyCard
 """
+
+# Ash Blossom & Joyous Spring 3
+# Effect Veiler 3
+# Infinite Impermanence 3
+
 input_possibilities_here="""
-Fluffal AND Edge AND Poly
-Fluffal AND Patch AND 1 - Poly
-Dog AND Poly
-Owl AND Edge
-Bear AND BrilliantFus AND 0 = Garnet
-2 + HandTrap
+Lvl2Tuner AND Lvl4 AND SixSam AND EmptyCard
+Lvl3Tuner AND Lvl3 AND SixSam AND EmptyCard
 """
 num_trials=10000
 
 #Below is the actual code; can ignore
-
-
-from itertools import product
-import random
-import sys
 
 def empty_deck(n):
 	deck=[]
 	for i in range(0, n):
 		deck.append("blank")
 	return deck
-
 
 def add_card(deck, name, quantity):
 	for i in range(0, quantity):
@@ -82,7 +92,6 @@ def hand_comb(hand):
 			cats.append(card_hash[c])
 	return product(*cats)
 
-
 def is_valid(hand, condition):
 	for cond in condition:
 		card=cond[0]
@@ -97,7 +106,7 @@ def is_valid(hand, condition):
 			return False
 	return True
 
-def is_one_valid(hand,possibilities):
+def is_one_valid(hand, possibilities):
 	combs = hand_comb(hand)
 	for comb in combs:
 		for p in possibilities:
@@ -105,7 +114,7 @@ def is_one_valid(hand,possibilities):
 				return True
 	return False
 
-def is_one_valid_draw(hand,extras,possibilities,can_extrav,can_desires,can_upstart,can_prosperity,can_duality):
+def is_one_valid_draw(hand, extras, possibilities, can_extrav, can_desires, can_upstart, can_prosperity, can_duality):
 	if is_one_valid(hand,possibilities):
 		return True
 	if can_desires and "Desires" in hand:
@@ -147,72 +156,91 @@ def is_one_valid_draw(hand,extras,possibilities,can_extrav,can_desires,can_upsta
 				return True
 	return False
 
-card_hash = dict()
-deck=empty_deck(deck_size)
-all_cats=[]
-deck_count=0
-num_extras=0
-cardlines=input_cards_here.splitlines()
-cardlines.pop(0)
-for cardline in cardlines:
-	s=cardline.split(" ")
-	#catch int error here
-	try:
-		deck=add_card(deck,s[0],int(s[1]))
-	except:
-		print("Error in input_cards_here, check line "+cardline)
+def other():
+	card_hash = dict()
+	deck=empty_deck(deck_size)
+	all_cats=[]
+	deck_count=0
+	num_extras=0
+	cardlines=input_cards_here.splitlines()
+	cardlines.pop(0)
+	for cardline in cardlines:
+		s=cardline.split(" ")
+		#catch int error here
+		try:
+			deck=add_card(deck,s[0],int(s[1]))
+		except:
+			print("Error in input_cards_here, check line "+cardline)
+			sys.exit(0)
+		deck_count+=int(s[1])
+		all_cats.append(s[0])
+		if s[0]=="Upstart":
+			num_extras+=int(s[1])
+		card_cats=[]
+		card_cats.append(s[0])
+		for i in range(2, len(s)):
+			card_cats.append(s[i])
+			if s[i] not in all_cats:
+				all_cats.append(s[i])
+		card_hash[s[0]]=card_cats
+	if "Prosperity" in deck or "Extravagance" in deck:
+		num_extras+=6
+	if "Duality" in deck:
+		num_extras+=3
+	if "Desires" in deck:
+		num_extras+=2
+	if deck_count>deck_size:
+		print("Inputted cards: "+str(deck_count)+". Exceeds deck size: "+str(deck_size))
 		sys.exit(0)
-	deck_count+=int(s[1])
-	all_cats.append(s[0])
-	if s[0]=="Upstart":
-	    num_extras+=int(s[1])
-	card_cats=[]
-	card_cats.append(s[0])
-	for i in range(2, len(s)):
-		card_cats.append(s[i])
-		if s[i] not in all_cats:
-			all_cats.append(s[i])
-	card_hash[s[0]]=card_cats
-if "Prosperity" in deck or "Extravagance" in deck:
-    num_extras+=6
-if "Duality" in deck:
-    num_extras+=3
-if "Desires" in deck:
-    num_extras+=2
-if deck_count>deck_size:
-	print("Inputted cards: "+str(deck_count)+". Exceeds deck size: "+str(deck_size))
-	sys.exit(0)
 
-possibilities=[]
-text_possibilities=input_possibilities_here.splitlines()
-text_possibilities.pop(0)
-for possibility in text_possibilities:
-	if len(possibility)==0:
-		continue
-	conditions=[]
-	text_conditions=possibility.split("AND")
-	for condition in text_conditions:
-		parts=condition.split()
-		if len(parts)==3:
-			if parts[2] not in all_cats:
-				print("Possibility: " +possibility+ " contains unlisted card or category "+ parts[2])
-				sys.exit(0)
-			if parts[1] not in ['-','+','='] or not parts[0].isdigit():
-				print("Check formatting of line: "+possibility)
-				sys.exit(0)
-			conditions.append([parts[2],int(parts[0]),parts[1]])
-		elif len(parts)==1:
-			if parts[0] not in all_cats:
-				print("Possibility: " +possibility+ " contains unlisted card or category "+ parts[0])
-				sys.exit(0)			
-			conditions.append([parts[0], 1, '+'])
-		else:
-			print("Check formatting of input_possibilities_here, line: "+possibility)	
-	possibilities.append(conditions)
+	possibilities=[]
+	text_possibilities=input_possibilities_here.splitlines()
+	text_possibilities.pop(0)
+	for possibility in text_possibilities:
+		if len(possibility)==0:
+			continue
+		conditions=[]
+		text_conditions=possibility.split("AND")
+		for condition in text_conditions:
+			parts=condition.split()
+			if len(parts)==3:
+				if parts[2] not in all_cats:
+					print("Possibility: " +possibility+ " contains unlisted card or category "+ parts[2])
+					sys.exit(0)
+				if parts[1] not in ['-','+','='] or not parts[0].isdigit():
+					print("Check formatting of line: "+possibility)
+					sys.exit(0)
+				conditions.append([parts[2],int(parts[0]),parts[1]])
+			elif len(parts)==1:
+				if parts[0] not in all_cats:
+					print("Possibility: " +possibility+ " contains unlisted card or category "+ parts[0])
+					sys.exit(0)			
+				conditions.append([parts[0], 1, '+'])
+			else:
+				print("Check formatting of input_possibilities_here, line: "+possibility)	
+		possibilities.append(conditions)
 
-counter=0
-for i in range(0,num_trials):
-	hand=get_hand(deck,hand_size, num_extras)
-	if is_one_valid_draw(hand[0],hand[1],possibilities,True,True,True,True,True):
-		counter+=1
-print("probability of success: "+ str(counter/num_trials*100)+"%")
+	counter=0
+	for i in range(0,num_trials):
+		hand=get_hand(deck,hand_size, num_extras)
+		if is_one_valid_draw(hand[0],hand[1],possibilities,True,True,True,True,True):
+			counter+=1
+	print("probability of success: "+ str(counter/num_trials*100)+"%")
+
+def main():
+	parser = argparse.ArgumentParser(prog='YugiohSim', description='Simulates probabilities of outcomes')
+	parser.add_argument('input_file', help="The yaml file to use for simulation")
+	
+	args = parser.parse_args()	
+
+	with open(args.input_file, 'r') as file:
+		x = yaml.safe_load(file)
+		deck = Deck.BuildDeck(x)
+
+		hand = deck.draw(5)
+
+		for card in hand:
+			print(card.name + ": " + str(card.tags))
+
+if __name__ == "__main__":
+    main()
