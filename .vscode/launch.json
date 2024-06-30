@@ -7,7 +7,7 @@
             "request": "launch",
             "program": "YugiohSim.py",
             "console": "integratedTerminal",
-            "args": "./config.yaml"
+            "args": "${command:pickArgs}"
         }
     ]
 }
